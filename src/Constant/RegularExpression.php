@@ -7,6 +7,6 @@ namespace Dotenv\Constant;
 final class RegularExpression
 {
   public const RNESTVAR = '/\$\{(\w+)\}/m';
-  public const RENVLINE = '/^\s*(\w+)\s*=\s*(?:"((?:.|[\r\n])*?)"|\'((?:.|[\r\n])*?)\'|`((?:.|[\r\n])*?)`|([^#\r\n]*))(?!^#)/m';
+  public const RENVLINE = '/^\s*(\w+)[\x20]*=[\x20]*(?:"((?:.|[\r\n])*?)"|\'((?:.|[\r\n])*?)\'|`((?:.|[\r\n])*?)`|([^#\r\n]*))(?!^#)/m';
 }
 ?>
