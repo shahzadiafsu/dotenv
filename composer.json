@@ -1,5 +1,5 @@
 {
-    "name": "environment/dotenv",
+    "name": ".env/dotenv",
     "description": "Loads environment variables from `.env` to `getenv()`, `$_ENV` and `$_SERVER` automatically.",
     "type": "library",
     "keywords": ["dotenv", "env"],
