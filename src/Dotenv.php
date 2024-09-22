@@ -62,11 +62,21 @@ class Dotenv
     return self::create($path, $name, $fileEncoding);
   }
 
+  /**
+   *
+   * @param string|array $variables  [required]
+   * @return \Validator\Validator
+   */
   public function required($variables)
   {
     return (new Validator((array) $variables))->required();
   }
 
+  /**
+   *
+   * @param string|array $variables  [required]
+   * @return \Validator\Validator
+   */
   public function ifPresent($variables)
   {
     return new Validator((array) $variables);
