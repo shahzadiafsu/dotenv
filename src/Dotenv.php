@@ -1,113 +1,127 @@
 <?php
 
 declare(strict_types=1);
-
-/**
- * 
- */
+/*
+│––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+│ Dotenv v1.2.0
+│––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+│
+│
+│
+*/
 namespace Dotenv;
 
-use Dotenv\Parser\ParserInterface;
-use Dotenv\Parser\Parser;
 use Dotenv\Loader\LoaderInterface;
 use Dotenv\Loader\Loader;
+use Dotenv\Parser\ParserInterface;
+use Dotenv\Parser\Parser;
+use Dotenv\Env\EnvInterface;
+use Dotenv\Env\Env;
+use Dotenv\Env\EnvBuilder;
+use Dotenv\Env\ContentStore;
 use Dotenv\Validator\Validator;
-use Dotenv\Store\StoreInterface;
-use Dotenv\Store\PathBuilder;
 
 class Dotenv
 {
-
   /**
-   * @var \Dotenv\Loader\LoaderInterface   $loader
-   * @var \Dotenv\Parser\ParserInterface   $parser
-   * @var \Dotenv\Store\StoreInterface     $store
+   * 
+   * @var \Dotenv\Env\EnvInterface        $env
+   * @var \Dotenv\Loader\LoaderInterface  $loader
+   * @var \Dotenv\Parser\ParserInterface  $parser
    */
-  private $loader;
-  private $parser;
-  private $store;
+  private $env, $loader, $parser;
+
+  public const VERSION = '1.2.0';
 
   /**
+   * Create a new dotenv instance.
    * 
-   * 
-   * @var \Dotenv\Dotenv\VERSION         VERSION
-   */
-  public const VERSION = '1.0.0';
-
-  /**
-   * 
-   * @param \Dotenv\Store\StoreInterface   $store
-   * @param \Dotenv\Loader\LoaderInterface $loader
-   * @param \Dotenv\Parser\ParserInterface $parser
-   * 
+   * @param \Dotenv\Env\EnvInterface        $env     [required]
+   * @param \Dotenv\Loader\LoaderInterface  $loader  [required]
+   * @param \Dotenv\Parser\ParserInterface  $parser  [required]
    * @return void
    */
-  public function __construct(StoreInterface $store, LoaderInterface $loader, ParserInterface $parser)
+  public function __construct(EnvInterface $env, LoaderInterface $loader, ParserInterface $parser)
   {
     $this->loader = $loader;
     $this->parser = $parser;
-    $this->store  = $store;
+    $this->env    = $env;
   }
 
   /**
+   * Create a new dotenv instance.
    * 
-   * 
-   * @param string|null $path
-   * @param string|null $name
-   * @param string|null $file_encoding
-   * @param
+   * @param string      $path          [required]
+   * @param string|null $name          [optional]
+   * @param string|null $fileEncoding  [optional]
    * 
    * @return \Dotenv\Dotenv
    */
-  public static function config(?string $path=null, ?string $name=null, ?string $file_encoding=null)
+  public static function doConfig(string $path, ?string $name = null, ?string $fileEncoding = null)
   {
-    return self::init((!$path ? $_SERVER['DOCUMENT_ROOT'] : $path), $name, $file_encoding);
+    return self::create($path, $name, $fileEncoding);
+  }
+
+  public function required($variables)
+  {
+    return (new Validator((array) $variables))->required();
+  }
+
+  public function ifPresent($variables)
+  {
+    return new Validator((array) $variables);
   }
 
   /**
    * 
+   * @param string $content  [required]
+   * @return array<string,string|null>
    */
-  public static function quickLoad()
+  public function parse(string $content)
   {
-    return self::config()->safeLoad();
+    $dotenv = new self(new ContentStore($content), new Loader(), new Parser());
+    return $dotenv->load();
   }
 
-  /**
-   * 
-   * 
-   * @return \Dotenv\Dotenv
-   */
-  public function safeLoad()
-  {
-    try {$this->load();} catch(\Exception $e) {return [];}
-  }
-
-  /**
-   * 
-   * 
-   * @return \Dotenv\Dotenv
-   */
+  /*
+  │––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  │
+  │––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  │
+  │
+  │
+  */
   public function load()
   {
-    $this->loader->load($this->parser->parse($this->store->read()));
+    return $this->loader->load($this->parser->parse($this->env->read()));
+  }
+
+  /*
+  │––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  │
+  │––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  │
+  │
+  │
+  */
+  public function safeLoad()
+  {
+    try { return $this->load(); } catch(\Exception $e) { return []; }
   }
 
   /**
+   * Create a new dotenv instance.
    * 
-   * 
-   * @param string      $path
-   * @param string|null $name
-   * @param string|null $file_encoding
-   * @param
+   * @param string      $path          [required]
+   * @param string|null $name          [optional]
+   * @param string|null $fileEncoding  [optional]
    * 
    * @return \Dotenv\Dotenv
    */
-  public static function init($path, ?string $name=null, ?string $file_encoding=null /*#param=end*/)
+  public static function create(string $path, ?string $name = null, ?string $fileEncoding = null)
   {
-    $PathBuilder = $name===null ? PathBuilder::setWithName() : PathBuilder::setWithoutName();
-    $name && ($PathBuilder = $PathBuilder->addName($name));
-    $path && ($PathBuilder = $PathBuilder->addPath($path));
-    return new self($PathBuilder->fileEncoding($file_encoding)->make(), new Loader(), new Parser());
+    $EnvBuilder = EnvBuilder::make($path, $name);
+    return new self($EnvBuilder::fileEncoding($fileEncoding)->store(), new Loader(), new Parser());
   }
 }
 ?>

@@ -6,18 +6,14 @@ namespace Dotenv\Loader;
 
 final class Loader implements LoaderInterface
 {
-  public function __construct()
-  {
-
-  }
-
   public function load(array $entries)
   {
-    foreach($entries as $key=>$value)
+    foreach($entries as $name => $value)
     {
-      $_SERVER[$key] = $_ENV[$key] = $value;
-      putenv("{$key}={$value}");
+      $_SERVER[$name] = $_ENV[$name] = $value;
+      \putenv("$name=$value");
     }
+    return true;
   }
 }
 ?>
